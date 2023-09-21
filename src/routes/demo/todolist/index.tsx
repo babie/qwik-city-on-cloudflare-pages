@@ -1,4 +1,5 @@
 import { component$ } from "@builder.io/qwik";
+import type { RequestEventLoader } from "@builder.io/qwik-city";
 import {
   type DocumentHead,
   routeLoader$,
@@ -8,6 +9,12 @@ import {
   Form,
 } from "@builder.io/qwik-city";
 import styles from "./todolist.module.css";
+import { type PlatformCloudflarePages } from "@builder.io/qwik-city/middleware/cloudflare-pages";
+import { type KVNamespace } from "@cloudflare/workers-types";
+
+export interface Env {
+  QOC_KV_DEV: KVNamespace;
+}
 
 interface ListItem {
   text: string;
@@ -15,20 +22,27 @@ interface ListItem {
 
 export const list: ListItem[] = [];
 
-export const useListLoader = routeLoader$(() => {
-  return list;
-});
+export const useListLoader = routeLoader$(
+  async (reqev: RequestEventLoader<PlatformCloudflarePages>) => {
+    const kv = reqev.env.get("QOC_KV_DEV") as unknown as KVNamespace;
+    const todos = (await kv.get<ListItem[]>("todos", "json")) || [];
+    return todos;
+  }
+);
 
 export const useAddToListAction = routeAction$(
-  (item) => {
-    list.push(item);
+  async (item, reqev) => {
+    const kv = reqev.env.get("QOC_KV_DEV") as unknown as KVNamespace;
+    const prevTodos = await kv.get<ListItem[]>("todos", "json");
+    const nextTodos = prevTodos ? [...prevTodos, item] : [];
+    await kv.put("todos", JSON.stringify(nextTodos));
     return {
       success: true,
     };
   },
   zod$({
     text: z.string().trim().min(1),
-  }),
+  })
 );
 
 export default component$(() => {

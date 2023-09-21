@@ -1,0 +1,3 @@
+kv_namespaces = [
+   { binding = "QOC_KV_DEV", id = "6ae710e2775143a0adaf97d3a9278a3d", preview_id = "6ae710e2775143a0adaf97d3a9278a3d" }
+]
