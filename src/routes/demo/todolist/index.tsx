@@ -10,6 +10,7 @@ import {
 } from "@builder.io/qwik-city";
 import styles from "./todolist.module.css";
 import { type PlatformCloudflarePages } from "@builder.io/qwik-city/middleware/cloudflare-pages";
+import { binding } from "cf-bindings-proxy";
 import { type KVNamespace } from "@cloudflare/workers-types";
 
 export interface Env {
@@ -23,16 +24,20 @@ interface ListItem {
 export const list: ListItem[] = [];
 
 export const useListLoader = routeLoader$(
-  async (reqev: RequestEventLoader<PlatformCloudflarePages>) => {
-    const kv = reqev.env.get("QOC_KV_DEV") as unknown as KVNamespace;
+  async ({ platform }: RequestEventLoader<PlatformCloudflarePages>) => {
+    const kv = binding<KVNamespace>("QOC_KV_DEV", {
+      fallback: platform.env as Record<string, unknown>,
+    });
     const todos = (await kv.get<ListItem[]>("todos", "json")) || [];
     return todos;
   }
 );
 
 export const useAddToListAction = routeAction$(
-  async (item, reqev) => {
-    const kv = reqev.env.get("QOC_KV_DEV") as unknown as KVNamespace;
+  async (item, { platform }) => {
+    const kv = binding<KVNamespace>("QOC_KV_DEV", {
+      fallback: platform.env as Record<string, unknown>,
+    });
     const prevTodos = await kv.get<ListItem[]>("todos", "json");
     const nextTodos = prevTodos ? [...prevTodos, item] : [];
     await kv.put("todos", JSON.stringify(nextTodos));

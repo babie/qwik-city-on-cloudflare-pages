@@ -38,5 +38,8 @@
     "vite": "4.4.7",
     "vite-tsconfig-paths": "4.2.0",
     "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "cf-bindings-proxy": "^0.7.0"
   }
 }
